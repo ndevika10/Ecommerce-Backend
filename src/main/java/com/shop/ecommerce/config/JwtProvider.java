@@ -15,21 +15,17 @@ public class JwtProvider {
     SecretKey key = Keys.hmacShaKeyFor(JwtConstant.SECRET_KEY.getBytes());
 
     public String generateToken(Authentication auth) {
-        String jwt = Jwts.builder()
+        return Jwts.builder()
                 .setIssuedAt(new Date())
-                .setExpiration(new Date(new Date().getTime() + 864000000))
+                .setExpiration(new Date(new Date().getTime() + 864000000)) // 10 days
                 .claim("email", auth.getName())
-                .signWith(key).compact();
-        return jwt;
+                .signWith(key)
+                .compact();
     }
 
     public String getEmailFromToken(String jwt) {
-        // Do NOT remove prefix here - expect raw token only
         SecretKey key = Keys.hmacShaKeyFor(JwtConstant.SECRET_KEY.getBytes());
         Claims claims = Jwts.parser().setSigningKey(key).build().parseClaimsJws(jwt).getBody();
-        String email = String.valueOf(claims.get("email"));
-        return email;
+        return String.valueOf(claims.get("email"));
     }
-
-
 }

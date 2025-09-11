@@ -9,59 +9,58 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.www.BasicAuthenticationFilter;
 import org.springframework.web.cors.CorsConfiguration;
+import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
+import org.springframework.web.filter.CorsFilter;
 
-import java.util.Arrays;
 import java.util.List;
 
 @Configuration
 public class AppConfig {
 
+    // ✅ Global CORS Filter
+    @Bean
+    public CorsFilter corsFilter() {
+        CorsConfiguration config = new CorsConfiguration();
+        config.setAllowCredentials(true);
+        config.setAllowedOriginPatterns(List.of(
+                "http://localhost:*",
+                "https://devikas-shop.vercel.app"
+        ));
+        config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
+        config.setAllowedHeaders(List.of("*"));
+        config.setExposedHeaders(List.of("Authorization"));
+        config.setMaxAge(3600L);
+
+        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+        source.registerCorsConfiguration("/**", config);
+
+        return new CorsFilter(source);
+    }
+
+    // ✅ Spring Security Filter Chain
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
 
         http
-                // ✅ Make session stateless
+                // Stateless session
                 .sessionManagement(session ->
                         session.sessionCreationPolicy(SessionCreationPolicy.STATELESS)
                 )
 
-                // ✅ Enable CORS with allowed origins (Frontend & Backend)
-                .cors(cors -> cors.configurationSource(request -> {
-                    CorsConfiguration cfg = new CorsConfiguration();
+                // CORS is handled by global filter
+                .cors().and()
 
-                    cfg.setAllowedOrigins(Arrays.asList(
-                            "http://localhost:3000",
-                            "http://localhost:5173",
-                            "http://localhost:4200",
-                            "https://devikas-shop.vercel.app"
-                    ));
-
-                    cfg.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
-                    cfg.setAllowCredentials(true); // Allow cookies/authorization headers
-                    cfg.setAllowedHeaders(Arrays.asList(
-                            "Authorization",
-                            "Content-Type",
-                            "X-Requested-With",
-                            "Accept",
-                            "Origin"
-                    ));
-                    cfg.setExposedHeaders(List.of("Authorization")); // if token is in header
-                    cfg.setMaxAge(3600L);
-
-                    return cfg;
-                }))
-
-                // ✅ Disable CSRF (not needed for stateless REST APIs)
+                // Disable CSRF for stateless API
                 .csrf(csrf -> csrf.disable())
 
-                // ✅ Configure authorization
+                // Authorization rules
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/auth/**").permitAll()    // Sign-in/sign-up allowed
-                        .requestMatchers("/api/**").authenticated() // API needs authentication
+                        .requestMatchers("/auth/**").permitAll()    // Sign-in/sign-up
+                        .requestMatchers("/api/**").authenticated() // Authenticated routes
                         .anyRequest().permitAll()
                 )
 
-                // ✅ Add JWT validator before BasicAuthenticationFilter
+                // JWT validator before basic auth
                 .addFilterBefore(new JwtValidator(), BasicAuthenticationFilter.class);
 
         return http.build();

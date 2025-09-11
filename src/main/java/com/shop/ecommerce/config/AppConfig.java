@@ -34,7 +34,6 @@ public class AppConfig {
                             "http://localhost:5173",
                             "http://localhost:4200",
                             "https://devikas-shop.vercel.app"
-                            // ❌ Do NOT add backend URL here — backend doesn’t call itself through CORS
                     ));
 
                     cfg.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));

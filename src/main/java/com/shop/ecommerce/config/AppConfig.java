@@ -24,7 +24,8 @@ public class AppConfig {
         config.setAllowCredentials(true);
         config.setAllowedOriginPatterns(List.of(
                 "http://localhost:*",
-                "https://devikas-shop.vercel.app"
+                "https://devikas-shop.vercel.app",
+                "https://ecommerce-backend-production-ce7d.up.railway.app"
         ));
         config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
         config.setAllowedHeaders(List.of("*"));

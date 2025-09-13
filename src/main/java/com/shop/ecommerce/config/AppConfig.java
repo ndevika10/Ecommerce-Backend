@@ -9,63 +9,47 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.www.BasicAuthenticationFilter;
 import org.springframework.web.cors.CorsConfiguration;
-import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
-import org.springframework.web.filter.CorsFilter;
+import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 
+import java.util.Arrays;
 import java.util.List;
 
 @Configuration
 public class AppConfig {
 
-    // ✅ Global CORS Filter
-    @Bean
-    public CorsFilter corsFilter() {
-        CorsConfiguration config = new CorsConfiguration();
-        config.setAllowCredentials(true);
-        config.setAllowedOriginPatterns(List.of(
-                "http://localhost:*",
-                "http://localhost:5173",
-                "https://devikas-shop.vercel.app",
-                "https://ecommerce-backend-production-ce7d.up.railway.app"
-        ));
-        config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
-        config.setAllowedHeaders(List.of("*"));
-        config.setExposedHeaders(List.of("Authorization"));
-        config.setMaxAge(3600L);
-
-        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
-        source.registerCorsConfiguration("/**", config);
-
-        return new CorsFilter(source);
-    }
-
-    // ✅ Spring Security Filter Chain
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
-
-        http
-                // Stateless session
+        return http
+                // ✅ session management (new lambda style)
                 .sessionManagement(session ->
                         session.sessionCreationPolicy(SessionCreationPolicy.STATELESS)
                 )
-
-                // CORS is handled by global filter
-                .cors().and()
-
-                // Disable CSRF for stateless API
-                .csrf(csrf -> csrf.disable())
-
-                // Authorization rules
+                // ✅ cors configuration (new lambda style)
+                .cors(cors -> cors.configurationSource(request -> {
+                    CorsConfiguration cfg = new CorsConfiguration();
+                    cfg.setAllowedOrigins(Arrays.asList(
+                            "http://localhost:3000",
+                            "http://localhost:5173",
+                            "http://localhost:4200"
+                    ));
+                    cfg.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
+                    cfg.setAllowCredentials(true);
+                    cfg.setAllowedHeaders(Arrays.asList("Authorization", "Content-Type", "X-Requested-With", "Accept"));
+                    cfg.setExposedHeaders(List.of("Authorization"));
+                    cfg.setMaxAge(3600L);
+                    return cfg;
+                }))
+                // ✅ csrf disable (new way)
+                .csrf(AbstractHttpConfigurer::disable)
+                // ✅ authorize requests
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/auth/**").permitAll()    // Sign-in/sign-up
-                        .requestMatchers("/api/**").authenticated() // Authenticated routes
+                        .requestMatchers("/auth/**").permitAll()
+                        .requestMatchers("/api/**").authenticated()
                         .anyRequest().permitAll()
                 )
-
-                // JWT validator before basic auth
-                .addFilterBefore(new JwtValidator(), BasicAuthenticationFilter.class);
-
-        return http.build();
+                // ✅ add custom JWT validator filter
+                .addFilterBefore(new JwtValidator(), BasicAuthenticationFilter.class)
+                .build();
     }
 
     @Bean

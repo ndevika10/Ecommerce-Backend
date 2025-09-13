@@ -30,7 +30,9 @@ public class AppConfig {
                     cfg.setAllowedOrigins(Arrays.asList(
                             "http://localhost:3000",
                             "http://localhost:5173",
-                            "http://localhost:4200"
+                            "http://localhost:4200",
+                            "https://ecommerce-backend-production-b6ee.up.railway.app",
+                            "https://devikas-shop.vercel.app"
                     ));
                     cfg.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
                     cfg.setAllowCredentials(true);
